@@ -19,9 +19,10 @@ https://docs.rs/pest_meta/2.7.15/pest_meta/parser/fn.consume_rules.html
 
 */
 
-use crate::{Pair, Rule};
+use super::Rule;
 use bumpalo::collections::Vec;
 use bumpalo::Bump;
+use pest::iterators::Pair;
 use pest::Span;
 
 pub trait TypedRule<'i> {
@@ -104,7 +105,7 @@ impl<'i> TypedRule<'i> for Choice<'i> {
 pub struct Sequence<'i> {
     _span: Span<'i>,
     pub atom1: &'i Atom1<'i>,
-    pub atom2: &'i Option<&'i Atom2<'i>>,
+    pub atom2: Option<&'i Atom2<'i>>,
     pub choice: &'i Vec<'i, &'i Choice<'i>>,
     pub atom3: &'i Vec<'i, &'i Atom3<'i>>,
 }
@@ -130,8 +131,8 @@ impl<'i> TypedRule<'i> for Sequence<'i> {
                 rule => panic!("unexpected rule {rule:?} within {:?}", Self::UNTYPED_RULE),
             }
         }
-        let atom1 = alloc.alloc(to_singleton(atom1));
-        let atom2 = alloc.alloc(to_option(atom2));
+        let atom1 = to_singleton(atom1);
+        let atom2 = to_option(atom2);
         let choice = alloc.alloc(choice);
         let atom3 = alloc.alloc(atom3);
         alloc.alloc(Sequence {

@@ -132,6 +132,7 @@ dependencies = [
  "bumpalo",
  "pest",
  "pest_derive",
+ "pest_meta",
 ]
 
 [[package]]

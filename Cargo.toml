@@ -1,0 +1,9 @@
+[package]
+name = "pestle"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+bumpalo = { version = "3.16.0", features = ["collections"] }
+pest = "2.7.15"
+pest_derive = "2.7.15"

@@ -10,10 +10,6 @@ pub type Tree<'a> = Pair<'a, Rule>;
 
 pub fn parse(source: &str) -> Result<Tree, pest::error::Error<Rule>> {
     let mut it = TestParser::parse(Rule::Sentence, source)?;
-    let sentence = it.next().unwrap();
-    assert_eq!(it.next(), None);
-    assert_eq!(sentence.as_rule(), Rule::Sentence);
-    let mut it = sentence.into_inner();
     let sequence = it.next().unwrap();
     assert_eq!(it.next().unwrap().as_rule(), Rule::EOI);
     assert_eq!(it.next(), None);

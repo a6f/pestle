@@ -39,19 +39,21 @@ fn to_option<T>(mut v: Vec<T>) -> Option<T> {{
     }}
 }}"##};
 
-    // TODO: build this with two passes
-    let mut skip = vec!["SOI", "EOI"];
+    // Avoid generating structs or fields for silent rules.
+    // Also drop "SOI" and "EOI" if they appear in a rule.
+    let mut skip: std::collections::HashSet<&str> = ["SOI", "EOI"].into();
+    for rule in &rules {
+        if rule.ty == RuleType::Silent {
+            skip.insert(rule.name.as_str());
+        }
+    }
 
     for rule in &rules {
-        println!();
         let name = rule.name.as_str();
         if skip.contains(&name) {
             continue;
         }
-        if rule.ty == RuleType::Silent {
-            println!("// silent rule {name} generates no code");
-            continue;
-        }
+        println!();
         if matches!(rule.ty, RuleType::Atomic) || matches!(rule.expr, Expr::Str(_)) {
             println! {r##"/// atomic rule {name}
 #[derive(Debug)]
@@ -68,12 +70,6 @@ impl<'i> TypedRule<'i> for {name}<'i> {{
     }}
 }}"##};
         } else if let Some(f) = choice_items(&rule.expr) {
-            if name == "PESTLE_SKIP" {
-                // TODO: unique here
-                skip.extend(f);
-                println!("// applied {name}");
-                continue;
-            }
             println! {r##"/// enum rule {name}
 #[derive(Debug)]
 pub enum {name}<'i> {{"##};
@@ -139,13 +135,7 @@ impl<'i> TypedRule<'i> for {name}<'i> {{
             for (id, ty, _rep) in &f {
                 println! {"                Rule::{ty} => _tmp_{id}.push({ty}::build(child, alloc)),"};
             }
-            for ty in &skip {
-                if *ty != "SOI" {
-                    println!("                Rule::{ty} => (),");
-                }
-            }
-            // would be simpler to do nothing here; no need to match skipped rules then
-            println! {r##"                rule => panic!("unexpected rule {{rule:?}} within {{:?}}", Self::UNTYPED_RULE),
+            println! {r##"                _ => (),
             }}
         }}
         alloc.alloc(Self {{

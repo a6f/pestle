@@ -39,9 +39,15 @@ fn to_option<T>(mut v: Vec<T>) -> Option<T> {{
     }}
 }}"##};
 
-    for rule in rules {
+    // TODO: build this with two passes
+    let mut skip = vec!["SOI", "EOI"];
+
+    for rule in &rules {
         println!();
-        let name = &rule.name;
+        let name = rule.name.as_str();
+        if skip.contains(&name) {
+            continue;
+        }
         if rule.ty == RuleType::Silent {
             println!("// silent rule {name} generates no code");
             continue;
@@ -62,6 +68,12 @@ impl<'i> TypedRule<'i> for {name}<'i> {{
     }}
 }}"##};
         } else if let Some(f) = choice_items(&rule.expr) {
+            if name == "PESTLE_SKIP" {
+                // TODO: unique here
+                skip.extend(f);
+                println!("// applied {name}");
+                continue;
+            }
             println! {r##"/// enum rule {name}
 #[derive(Debug)]
 pub enum {name}<'i> {{"##};
@@ -87,20 +99,20 @@ r##"        }}
             for v in &f {
                 println!("            Rule::{v} => {name}::{v}({v}::build(inner, alloc)),");
             }
-            println! {r##"
-            rule => panic!("unexpected rule {{rule:?}} within {{:?}}", Self::UNTYPED_RULE),
+            println! {r##"            rule => panic!("unexpected rule {{rule:?}} within {{:?}}", Self::UNTYPED_RULE),
         }})
     }}
 }}"##};
         } else {
             let f = sequence_items(&rule.expr)
                 .into_iter()
+                .filter(|item| !skip.contains(&item.0.as_str()))
                 .map(|(name, rep)| (name.to_ascii_lowercase(), name, rep))
                 .collect::<Vec<_>>();
             println! {r##"/// sequence rule {name}
 #[derive(Debug)]
 pub struct {name}<'i> {{
-    _span: Span<'i>,"##};
+    pub _span: Span<'i>,"##};
             for (id, ty, rep) in &f {
                 match rep {
                     1 => println!("    pub {id}: &'i {ty}<'i>,"),
@@ -127,8 +139,13 @@ impl<'i> TypedRule<'i> for {name}<'i> {{
             for (id, ty, _rep) in &f {
                 println! {"                Rule::{ty} => _tmp_{id}.push({ty}::build(child, alloc)),"};
             }
-            println! {r##"
-                rule => panic!("unexpected rule {{rule:?}} within {{:?}}", Self::UNTYPED_RULE),
+            for ty in &skip {
+                if *ty != "SOI" {
+                    println!("                Rule::{ty} => (),");
+                }
+            }
+            // would be simpler to do nothing here; no need to match skipped rules then
+            println! {r##"                rule => panic!("unexpected rule {{rule:?}} within {{:?}}", Self::UNTYPED_RULE),
             }}
         }}
         alloc.alloc(Self {{
@@ -148,14 +165,14 @@ r##"        }})
     }
 }
 
-fn choice_items(expr: &Expr) -> Option<Vec<String>> {
+fn choice_items(expr: &Expr) -> Option<Vec<&str>> {
     use core::borrow::Borrow;
     match expr {
         Expr::Choice(a, b) => {
             let mut r = vec![];
             for c in [a.borrow(), b.borrow()] {
                 match c {
-                    Expr::Ident(n) => r.push(n.clone()),
+                    Expr::Ident(n) => r.push(n.as_str()),
                     Expr::Choice(..) => r.extend(choice_items(a)?),
                     _ => panic!(
                         "choices must be in dedicated rules (to guide enum variant names): {c:?}"

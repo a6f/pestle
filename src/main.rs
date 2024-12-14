@@ -107,7 +107,7 @@ r##"        }}
             let f = sequence_items(&rule.expr)
                 .into_iter()
                 .filter(|item| !skip.contains(&item.0.as_str()))
-                .map(|(name, rep)| (name.to_ascii_lowercase(), name, rep))
+                .map(|(name, rep)| (snake_case(&name), name, rep))
                 .collect::<Vec<_>>();
             println! {r##"/// sequence rule {name}
 #[derive(Debug)]
@@ -220,4 +220,17 @@ fn sequence_items(expr: &Expr) -> Vec<(String, usize)> {
         Expr::Rep(e) => repeated(sequence_items(e)),
         e => unimplemented!("can't handle grammar expression {e:?}"),
     }
+}
+
+fn snake_case(s: &str) -> String {
+    let mut r = String::new();
+    let mut last_upper = true;
+    for c in s.chars() {
+        if c.is_ascii_uppercase() && !last_upper {
+            r.push('_');
+        }
+        last_upper = c.is_ascii_uppercase();
+        r.push(c.to_ascii_lowercase());
+    }
+    r
 }

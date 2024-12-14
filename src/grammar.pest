@@ -1,9 +1,0 @@
-Sentence = _{ SOI ~ Sequence ~ EOI }
-
-Sequence = { Atom1 ~ Choice* ~ Atom3? }
-
-Choice = { Atom2 | Sequence }
-
-Atom1 = @{ "1" }
-Atom2 = @{ "2" }
-Atom3 = @{ "3" }

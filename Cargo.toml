@@ -2,13 +2,13 @@
 name = "pestle"
 version = "0.1.0"
 edition = "2021"
-default-run = "pestle"
 
 [dependencies]
 bumpalo = { version = "3.16.0", features = ["collections"] }
 pest = "2.7.15"
 pest_derive = "2.7.15"
 pest_meta = "2.7.15"
-
-[[bin]]
-name = "test"
+prettyplease = "0.2.25"
+proc-macro2 = "1.0.92"
+quote = "1.0.37"
+syn = "2.0.90"

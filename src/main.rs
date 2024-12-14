@@ -211,14 +211,26 @@ fn sequence_items(expr: &Expr) -> Vec<(String, usize)> {
         a
     }
     match expr {
+        Expr::Str(_) => vec![],
+        Expr::Insens(_) => vec![],
+        Expr::Range(..) => vec![],
         Expr::Ident(n) => vec![(n.clone(), 1)],
+        Expr::PeekSlice(..) => vec![],
+        Expr::PosPred(_) => vec![],
+        Expr::NegPred(_) => vec![],
         Expr::Seq(a, b) => both(sequence_items(a), sequence_items(b)),
         Expr::Choice(..) => {
             panic!("choices must be in dedicated rules (to guide enum variant names): {expr:?}")
         }
         Expr::Opt(e) => optional(sequence_items(e)),
         Expr::Rep(e) => repeated(sequence_items(e)),
-        e => unimplemented!("can't handle grammar expression {e:?}"),
+        Expr::RepOnce(e) => repeated(sequence_items(e)),
+        Expr::RepExact(e, _) => repeated(sequence_items(e)),
+        Expr::RepMin(e, _) => repeated(sequence_items(e)),
+        Expr::RepMax(e, _) => repeated(sequence_items(e)),
+        Expr::RepMinMax(e, _, _) => repeated(sequence_items(e)),
+        Expr::Skip(_) => vec![],
+        Expr::Push(e) => sequence_items(e),
     }
 }
 

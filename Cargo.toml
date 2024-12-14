@@ -2,6 +2,10 @@
 name = "pestle"
 version = "0.1.0"
 edition = "2021"
+license = "0BSD"
+description = "typed AST facade for the pest parser"
+repository = "https://github.com/a6f/pestle"
+readme = "README.md"
 
 [lib]
 proc-macro = true

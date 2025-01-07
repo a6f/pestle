@@ -122,7 +122,7 @@ pub fn derive_macro(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
             let fields = f.iter().map(|(ty, id, _, rep)| match rep {
                 1 => quote! { pub #id: &'i #ty<'i>, },
                 0 => quote! { pub #id: Option<&'i #ty<'i>>, },
-                _ => quote! { pub #id: &'i Vec<'i, &'i #ty<'i>>, },
+                _ => quote! { pub #id: &'i [&'i #ty<'i>], },
             });
             let init = f.iter().map(|(_, id, tmp_id, rep)| match rep {
                 1 => quote! { #id: to_singleton(#tmp_id), },
